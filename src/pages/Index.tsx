@@ -1,715 +1,434 @@
-import { useEffect, useState } from "react"
-import { Copy, Check } from "lucide-react"
-import { Link } from "react-router-dom"
+import { useState } from "react"
+import Icon from "@/components/ui/icon"
+
+const MOCK_USER = {
+  name: "Dep.FNA | Vlad Hall | 227028",
+  username: "@vlad05",
+  id: "533424994789752832",
+  avatar: "https://cdn.poehali.dev/projects/9b197a59-33d2-4f6b-82ba-d3fd16734697/bucket/6fe73572-df15-461e-986e-c924644a4bed.png",
+  roles: ["FNA", "Academy"],
+  faction: "Во фракции",
+}
+
+const TICKET_TYPES = [
+  { id: "join", label: "Вступление в отдел" },
+  { id: "rank", label: "Повышение ранга" },
+  { id: "academy", label: "Тестирование Academy" },
+  { id: "weapon", label: "Запрос Спец.вооружения" },
+  { id: "ic_leave", label: "IC отпуск" },
+  { id: "ooc_leave", label: "OOC отпуск" },
+]
+
+const DEPARTMENTS = [
+  "Отдел внутренних расследований (ОВР)",
+  "Специальный отдел (СО)",
+  "Отдел по борьбе с организованной преступностью (ОБОП)",
+  "Информационный отдел (ИО)",
+  "Отдел по надзору (ОН)",
+  "Научно-технический отдел (НТО)",
+]
+
+const RANKS = [
+  "Стажёр", "Агент 3 класса", "Агент 2 класса", "Агент 1 класса",
+  "Старший агент", "Специальный агент", "Старший специальный агент",
+  "Супервайзер", "Заместитель директора", "Директор",
+]
+
+const MOCK_TICKETS = [
+  {
+    id: 2731,
+    type: "ОТДЕЛ",
+    date: "16.04.2026",
+    department: "IB",
+    rank: "Ранг: 11",
+    status: "rejected",
+    statusLabel: "Отклонено",
+  },
+  {
+    id: 2721,
+    type: "ОТДЕЛ",
+    date: "15.04.2026",
+    department: "SCD",
+    rank: "Ранг: 10",
+    status: "approved",
+    statusLabel: "Одобрено",
+  },
+  {
+    id: 2698,
+    type: "РАНГ",
+    date: "12.04.2026",
+    department: "FNA",
+    rank: "Ранг: 9",
+    status: "pending",
+    statusLabel: "Ожидает",
+  },
+]
 
 export default function Index() {
-  const [currentCommand, setCurrentCommand] = useState(0)
-  const [showCursor, setShowCursor] = useState(true)
-  const [matrixChars, setMatrixChars] = useState<string[]>([])
-  const [terminalLines, setTerminalLines] = useState<string[]>([])
-  const [currentTyping, setCurrentTyping] = useState("")
-  const [isExecuting, setIsExecuting] = useState(false)
-  const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({})
+  const [activeTab, setActiveTab] = useState("join")
+  const [showBanner, setShowBanner] = useState(true)
+  const [formData, setFormData] = useState({
+    name: MOCK_USER.name,
+    department: "",
+    rank: "",
+    experience: "",
+    motivation: "",
+    contacts: "",
+  })
+  const [submitted, setSubmitted] = useState(false)
 
-  const copyToClipboard = async (text: string, key: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedStates((prev) => ({ ...prev, [key]: true }))
-      setTimeout(() => {
-        setCopiedStates((prev) => ({ ...prev, [key]: false }))
-      }, 2000)
-    } catch (err) {
-      console.error("Failed to copy text: ", err)
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitted(true)
+    setTimeout(() => setSubmitted(false), 3000)
   }
 
-  const commands = [
-    "flux init --ai-powered --template react",
-    "flux generate --model claude-4 --context full",
-    "flux review --agent auto --fix",
-    "flux deploy --env production --zero-downtime",
-  ]
-
-  const terminalSequences = [
-    {
-      command: "flux init --ai-powered --template react",
-      outputs: [
-        "✓ Инициализация FLUX CLI проекта...",
-        "✓ Установка зависимостей [47 пакетов]...",
-        "✓ Подключение AI-агентов...",
-        "✓ Готово! Проект создан за 1.2s",
-      ],
-    },
-    {
-      command: "flux generate --model claude-4 --context full",
-      outputs: [
-        "✓ Анализ кодовой базы [312 файлов]...",
-        "✓ Модель claude-4 загружена...",
-        "✓ Генерация кода с учётом контекста...",
-        "✓ Компонент создан! +143 строки",
-      ],
-    },
-    {
-      command: "flux review --agent auto --fix",
-      outputs: [
-        "✓ Сканирование изменений [28 файлов]...",
-        "✓ Обнаружено 3 потенциальных проблемы...",
-        "✓ Автоматическое исправление применено...",
-        "✓ Ревью завершено. Код готов к мёржу!",
-      ],
-    },
-    {
-      command: "flux deploy --env production --zero-downtime",
-      outputs: [
-        "✓ Сборка production-билда [2.1s]...",
-        "✓ Прогон тестов: 142/142 passed...",
-        "✓ Rolling deployment запущен...",
-        "✓ Деплой завершён! 0 секунд простоя.",
-      ],
-    },
-  ]
-
-  const heroAsciiText = `███████╗██╗     ██╗   ██╗██╗  ██╗
-██╔════╝██║     ██║   ██║╚██╗██╔╝
-█████╗  ██║     ██║   ██║ ╚███╔╝ 
-██╔══╝  ██║     ██║   ██║ ██╔██╗ 
-██║     ███████╗╚██████╔╝██╔╝ ██╗
-╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-  ██████╗██╗     ██╗             
- ██╔════╝██║     ██║             
- ██║     ██║     ██║             
- ██║     ██║     ██║             
- ╚██████╗███████╗██║             
-  ╚═════╝╚══════╝╚═╝             `
-
-  useEffect(() => {
-    const chars = "FLUXCLI01010101ABCDEF".split("")
-    const newMatrixChars = Array.from({ length: 100 }, () => chars[Math.floor(Math.random() * chars.length)])
-    setMatrixChars(newMatrixChars)
-
-    const interval = setInterval(() => {
-      setMatrixChars((prev) => prev.map(() => chars[Math.floor(Math.random() * chars.length)]))
-    }, 1500)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowCursor((prev) => !prev)
-    }, 500)
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const sequence = terminalSequences[currentCommand]
-    const timeouts: ReturnType<typeof setTimeout>[] = []
-
-    const runSequence = async () => {
-      setTerminalLines([])
-      setCurrentTyping("")
-      setIsExecuting(false)
-
-      const command = sequence.command
-      for (let i = 0; i <= command.length; i++) {
-        timeouts.push(
-          setTimeout(() => {
-            setCurrentTyping(command.slice(0, i))
-          }, i * 50),
-        )
-      }
-
-      timeouts.push(
-        setTimeout(
-          () => {
-            setIsExecuting(true)
-            setCurrentTyping("")
-            setTerminalLines((prev) => [...prev, `user@dev:~/project$ ${command}`])
-          },
-          command.length * 50 + 500,
-        ),
-      )
-
-      sequence.outputs.forEach((output, index) => {
-        timeouts.push(
-          setTimeout(
-            () => {
-              setTerminalLines((prev) => [...prev, output])
-            },
-            command.length * 50 + 1000 + index * 800,
-          ),
-        )
-      })
-
-      timeouts.push(
-        setTimeout(
-          () => {
-            setCurrentCommand((prev) => (prev + 1) % commands.length)
-          },
-          command.length * 50 + 1000 + sequence.outputs.length * 800 + 2000,
-        ),
-      )
-    }
-
-    runSequence()
-
-    return () => {
-      timeouts.forEach(clearTimeout)
-    }
-  }, [currentCommand])
+  const activeTicketType = TICKET_TYPES.find((t) => t.id === activeTab)
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono overflow-hidden relative">
-      {/* Navigation */}
-      <nav className="border-b border-gray-800 bg-gray-950/95 backdrop-blur-sm p-4 relative z-10 sticky top-0">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 bg-red-500 hover:bg-red-400 transition-colors cursor-pointer"></div>
-                <div className="w-3 h-3 bg-yellow-500 hover:bg-yellow-400 transition-colors cursor-pointer"></div>
-                <div className="w-3 h-3 bg-green-500 hover:bg-green-400 transition-colors cursor-pointer"></div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-bold text-lg">FLUX</span>
-                <span className="text-gray-400 text-sm">CLI</span>
+    <div className="min-h-screen bg-[#1a1c2e] text-gray-100 font-sans">
+      {/* Header */}
+      <header className="bg-[#13152a] border-b border-[#2a2d4a] px-4 py-3 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#e63946] rounded-lg flex items-center justify-center flex-shrink-0">
+              <Icon name="Shield" size={20} className="text-white" />
+            </div>
+            <span className="text-white font-bold text-lg">
+              Система заявок <span className="text-[#e63946]">FIB</span>
+            </span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-sm font-semibold text-white">{MOCK_USER.name}</div>
+              <div className="flex items-center justify-end gap-1 mt-0.5">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span className="text-xs text-green-400">{MOCK_USER.faction}</span>
               </div>
             </div>
-
-            <div className="hidden md:flex items-center gap-8 ml-8">
-              <a
-                href="#features"
-                className="text-gray-400 hover:text-white transition-colors cursor-pointer relative group"
-              >
-                <span>Возможности</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></div>
-              </a>
-              <a
-                href="#models"
-                className="text-gray-400 hover:text-white transition-colors cursor-pointer relative group"
-              >
-                <span>AI-модели</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></div>
-              </a>
-              <a
-                href="#integrations"
-                className="text-gray-400 hover:text-white transition-colors cursor-pointer relative group"
-              >
-                <span>Интеграции</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></div>
-              </a>
-              <Link
-                to="/docs"
-                className="text-gray-400 hover:text-white transition-colors cursor-pointer relative group"
-              >
-                <span>Документация</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></div>
-              </Link>
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#e63946]">
+              <img src={MOCK_USER.avatar} alt="avatar" className="w-full h-full object-cover" />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 text-gray-500 text-xs">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>v2.1.0</span>
-            </div>
-
-            <div
-              className="group relative cursor-pointer"
-              onClick={() => copyToClipboard("npm install -g flux-cli", "nav-install")}
-            >
-              <div className="absolute inset-0 border border-gray-600 bg-gray-900/20 transition-all duration-300 group-hover:border-white group-hover:shadow-lg group-hover:shadow-white/20"></div>
-              <div className="relative border border-gray-400 bg-transparent text-white font-medium px-6 py-2 text-sm transition-all duration-300 group-hover:border-white group-hover:bg-gray-900/30 transform translate-x-0.5 translate-y-0.5 group-hover:translate-x-0 group-hover:translate-y-0">
-                <div className="flex items-center gap-2">
-                  {copiedStates["nav-install"] ? (
-                    <Check className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-gray-400" />
-                  )}
-                  <span className="text-gray-400">$</span>
-                  <span>Установить</span>
-                </div>
-              </div>
-            </div>
-
-            <button className="md:hidden text-gray-400 hover:text-white transition-colors">
-              <div className="w-6 h-6 flex flex-col justify-center gap-1">
-                <div className="w-full h-0.5 bg-current transition-all duration-300"></div>
-                <div className="w-full h-0.5 bg-current transition-all duration-300"></div>
-                <div className="w-full h-0.5 bg-current transition-all duration-300"></div>
-              </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1e2140] hover:bg-[#252848] transition-colors text-sm text-gray-300 border border-[#2a2d4a]">
+              <Icon name="BookOpen" size={14} />
+              <span className="hidden sm:inline">Инструкция</span>
+            </button>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1e2140] hover:bg-[#252848] transition-colors text-sm text-gray-300 border border-[#2a2d4a]">
+              <Icon name="RefreshCw" size={14} />
+              <span className="hidden sm:inline">Обновить</span>
+            </button>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#e63946]/20 hover:bg-[#e63946]/30 transition-colors text-sm text-[#e63946] border border-[#e63946]/30">
+              <Icon name="LogOut" size={14} />
+              <span className="hidden sm:inline">Выйти</span>
             </button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Matrix Background */}
-      <div className="fixed inset-0 opacity-10 pointer-events-none">
-        <div className="grid grid-cols-25 gap-1 h-full">
-          {matrixChars.map((char, i) => (
-            <div key={i} className="text-gray-500 text-xs animate-pulse">
-              {char}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative px-6 py-20 lg:px-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="mb-8">
-              <pre className="text-white text-lg lg:text-xl font-bold leading-none inline-block">{heroAsciiText}</pre>
-            </div>
-
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-              Мощный CLI-инструмент с <span className="text-gray-400 animate-pulse">AI-интеграцией</span>,
-              <br />
-              прямо в вашем{" "}
-              <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">терминале</span>.
-            </h1>
-
-            <p className="text-lg text-gray-300 leading-relaxed max-w-3xl mx-auto mb-8">
-              Один инструмент — вся мощь современных AI-моделей. Генерируйте код, проводите ревью и деплойте в production одной командой. Работает в любом IDE и окружении.
+      {/* Banner */}
+      {showBanner && (
+        <div className="bg-[#2d2a1a] border-b border-[#5a4a1a] px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-start gap-3">
+            <Icon name="AlertCircle" size={18} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-200 flex-1">
+              <strong>Важная информация:</strong> Заявки обрабатываются автоматически и поступают в Discord-каналы с небольшой задержкой (до 1 минуты). Статус можно отслеживать в разделе «Мои последние заявки».
             </p>
+            <button
+              onClick={() => setShowBanner(false)}
+              className="text-yellow-400 hover:text-yellow-200 flex-shrink-0 transition-colors"
+            >
+              <Icon name="X" size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <div
-                className="group relative cursor-pointer w-full sm:w-auto"
-                onClick={() => copyToClipboard("npm install -g flux-cli", "hero-install")}
-              >
-                <div className="absolute inset-0 border border-gray-600 bg-gray-900/20 transition-all duration-300 group-hover:border-white group-hover:shadow-lg group-hover:shadow-white/20"></div>
-                <div className="relative border border-white bg-white text-black font-bold px-6 sm:px-10 py-4 text-base sm:text-lg transition-all duration-300 group-hover:bg-gray-100 group-hover:text-black transform translate-x-1 translate-y-1 group-hover:translate-x-0 group-hover:translate-y-0 text-center">
-                  <div className="flex items-center justify-center gap-2 sm:gap-3">
-                    {copiedStates["hero-install"] ? (
-                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                    ) : (
-                      <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                    )}
-                    <span className="text-gray-600 text-sm sm:text-base">$</span>
-                    <span className="text-sm sm:text-base">npm install -g flux-cli</span>
-                  </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Left Column */}
+        <div className="space-y-6">
+
+          {/* Profile Card */}
+          <div className="bg-[#13152a] rounded-xl border border-[#2a2d4a] p-6">
+            <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+              <div className="w-1 h-5 bg-[#e63946] rounded-full"></div>
+              Профиль
+            </h2>
+
+            <div className="flex items-start gap-4">
+              <div className="relative flex-shrink-0">
+                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#e63946]">
+                  <img src={MOCK_USER.avatar} alt="avatar" className="w-full h-full object-cover" />
                 </div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-[#13152a]"></div>
               </div>
 
-              <Link to="/docs" className="group relative cursor-pointer w-full sm:w-auto">
-                <div className="absolute inset-0 border-2 border-dashed border-gray-600 bg-gray-900/20 transition-all duration-300 group-hover:border-white group-hover:shadow-lg group-hover:shadow-white/20"></div>
-                <div className="relative border-2 border-dashed border-gray-400 bg-transparent text-white font-bold px-10 py-4 text-lg transition-all duration-300 group-hover:border-white group-hover:bg-gray-900/30 transform translate-x-1 translate-y-1 group-hover:translate-x-0 group-hover:translate-y-0">
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400">-&gt;</span>
-                    <span>Документация</span>
-                  </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-white font-bold text-base truncate">{MOCK_USER.name}</h3>
+                <p className="text-gray-400 text-sm">{MOCK_USER.username}</p>
+                <p className="text-gray-500 text-xs mt-1">ID: {MOCK_USER.id}</p>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {MOCK_USER.roles.map((role) => (
+                    <span
+                      key={role}
+                      className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#e63946]/20 text-[#e63946] border border-[#e63946]/30 flex items-center gap-1"
+                    >
+                      <Icon name="ArrowRight" size={10} />
+                      {role}
+                    </span>
+                  ))}
                 </div>
-              </Link>
+              </div>
             </div>
+
+            <p className="text-gray-500 text-xs mt-4 flex items-start gap-1.5">
+              <Icon name="Info" size={12} className="flex-shrink-0 mt-0.5" />
+              Если никнейм или роли отображаются неверно, нажмите зелёную кнопку «Обновить» вверху справа.
+            </p>
           </div>
 
-          {/* Terminal Section */}
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gray-950 border border-gray-700 shadow-2xl backdrop-blur-sm">
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 bg-red-500 hover:bg-red-400 transition-colors cursor-pointer"></div>
-                    <div className="w-3 h-3 bg-yellow-500 hover:bg-yellow-400 transition-colors cursor-pointer"></div>
-                    <div className="w-3 h-3 bg-green-500 hover:bg-green-400 transition-colors cursor-pointer"></div>
-                  </div>
-                  <span className="text-gray-400 text-sm">flux-terminal</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-gray-500 text-xs">LIVE</span>
-                </div>
-              </div>
+          {/* Recent Tickets */}
+          <div className="bg-[#13152a] rounded-xl border border-[#2a2d4a] p-6">
+            <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+              <div className="w-1 h-5 bg-[#e63946] rounded-full"></div>
+              <Icon name="GraduationCap" size={16} className="text-gray-400" />
+              Мои последние заявки
+            </h2>
 
-              <div className="p-6 min-h-[300px] bg-black">
-                <div className="space-y-2 text-sm">
-                  {terminalLines.map((line, index) => (
-                    <div
-                      key={index}
-                      className={`${line.startsWith("user@dev") ? "text-white" : "text-gray-300"} ${line.includes("успешно") || line.includes("завершен") || line.includes("активна") ? "text-green-400" : ""}`}
-                    >
-                      {line}
-                    </div>
-                  ))}
-
-                  {!isExecuting && (
-                    <div className="text-white">
-                      <span className="text-green-400">user@dev</span>
-                      <span className="text-gray-500">:</span>
-                      <span className="text-blue-400">~/project</span>
-                      <span className="text-white">$ </span>
-                      <span className="text-white">{currentTyping}</span>
-                      <span className={`text-white ${showCursor ? "opacity-100" : "opacity-0"} transition-opacity`}>
-                        |
+            <div className="space-y-3">
+              {MOCK_TICKETS.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="bg-[#1a1c2e] rounded-lg border border-[#2a2d4a] p-4 hover:border-[#3a3d5a] transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-semibold text-sm">Заявка #{ticket.id}</span>
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        {ticket.type}
                       </span>
                     </div>
-                  )}
+                    <span className="text-gray-500 text-xs">{ticket.date}</span>
+                  </div>
 
-                  {isExecuting && (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <div className="flex gap-1">
-                        <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div
-                          className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        ></div>
-                        <div
-                          className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs">Выполняется...</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <Icon name="ArrowRight" size={12} className="text-gray-600" />
+                      <span>{ticket.department}</span>
+                      <span className="text-[#e63946] text-xs font-semibold">{ticket.rank}</span>
                     </div>
-                  )}
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between text-xs text-gray-500">
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-500">Команд выполнено:</span>
-                    <span className="text-white">{currentCommand + 1}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-500">AI-модели:</span>
-                    <span className="text-gray-500">Активны</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-500">Статус:</span>
-                    <span className="text-gray-500">{isExecuting ? "Работает" : "Готов"}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Integrations Section */}
-      <section className="px-6 py-16 lg:px-12 border-t border-gray-800" id="integrations">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Работает в любом окружении</h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              FLUX CLI интегрируется с любым IDE за 30 секунд. Одна установка — везде работает.
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gray-950 border border-gray-800 shadow-xl">
-              <div className="flex items-center justify-between px-6 py-3 bg-gray-900 border-b border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 bg-red-500"></div>
-                    <div className="w-3 h-3 bg-yellow-500"></div>
-                    <div className="w-3 h-3 bg-green-500"></div>
-                  </div>
-                  <span className="text-gray-400 text-sm">flux ide --list</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-gray-500 text-xs">ВСЕ ПОДДЕРЖИВАЮТСЯ</span>
-                </div>
-              </div>
-
-              <div className="p-6 bg-black">
-                <div className="text-sm text-gray-400 mb-4">$ flux ide --scan</div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 font-mono text-sm mb-6">
-                  {[
-                    { name: "cursor", status: "v", desc: "AI-редактор" },
-                    { name: "vscode", status: "v", desc: "Microsoft VS Code" },
-                    { name: "jetbrains", status: "v", desc: "Семейство IntelliJ" },
-                    { name: "android-studio", status: "v", desc: "Android-разработка" },
-                    { name: "vim/neovim", status: "v", desc: "Терминальные редакторы" },
-                    { name: "intellij", status: "v", desc: "Java-разработка" },
-                  ].map((ide) => (
-                    <div
-                      key={ide.name}
-                      className="flex items-center justify-between py-2 px-3 hover:bg-gray-900 cursor-pointer group transition-all duration-200 border border-transparent hover:border-gray-700"
+                    <span
+                      className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 ${
+                        ticket.status === "approved"
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : ticket.status === "rejected"
+                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-green-400 group-hover:text-white transition-colors w-4">
-                          {ide.status}
-                        </span>
-                        <span className="text-white group-hover:text-gray-200 transition-colors">{ide.name}</span>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 text-xs">
-                        {ide.desc}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4 border-t border-gray-800">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="text-sm text-gray-400">
-                      <div className="font-mono text-xs text-gray-500 space-y-1">
-                        <div>$ flux ide --install-all # Настроить все IDE</div>
-                        <div>$ flux ide --status # Проверить интеграцию</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>6 активно</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span>Без настройки</span>
-                      </div>
-                    </div>
+                      <Icon
+                        name={ticket.status === "approved" ? "Check" : ticket.status === "rejected" ? "X" : "Clock"}
+                        size={10}
+                      />
+                      {ticket.statusLabel}
+                    </span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="mt-4 text-center">
-              <div className="inline-flex items-center gap-2 text-gray-400 text-sm">
-                <span className="text-green-400">*</span>
-                <span>Универсальная совместимость - Мгновенная настройка - Работает везде</span>
-              </div>
+              ))}
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Models Section */}
-      <section className="px-6 py-20 lg:px-12 border-t border-gray-800" id="models">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Топовые AI-модели</h2>
-            <p className="text-xl text-gray-400">Переключайтесь между моделями одной командой — без лишних настроек</p>
+        {/* Right Column — Application Form */}
+        <div className="bg-[#13152a] rounded-xl border border-[#2a2d4a] p-6">
+          <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+            <div className="w-1 h-5 bg-[#e63946] rounded-full"></div>
+            Подача заявки
+          </h2>
+
+          {/* Tab Selector */}
+          <div className="flex gap-1.5 mb-6 overflow-x-auto pb-1">
+            {TICKET_TYPES.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "bg-[#e63946] text-white shadow-lg shadow-[#e63946]/30"
+                    : "bg-[#1a1c2e] text-gray-400 hover:text-gray-200 hover:bg-[#252848] border border-[#2a2d4a]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gray-950 border border-gray-800 shadow-2xl">
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 bg-red-500"></div>
-                    <div className="w-3 h-3 bg-yellow-500"></div>
-                    <div className="w-3 h-3 bg-green-500"></div>
-                  </div>
-                  <span className="text-gray-400 text-sm">flux model select</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-gray-500 text-xs">6 ДОСТУПНО</span>
-                </div>
+          {/* Form */}
+          {submitted ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/40">
+                <Icon name="Check" size={32} className="text-green-400" />
               </div>
-
-              <div className="p-6 bg-black">
-                <div className="text-sm text-gray-400 mb-4">$ flux model --list</div>
-
-                <div className="space-y-2 font-mono text-sm">
-                  {[
-                    { id: "1", name: "gpt-5", provider: "openai", status: "*", color: "text-green-400" },
-                    { id: "2", name: "claude-4-sonnet", provider: "anthropic", status: "*", color: "text-green-400" },
-                    { id: "3", name: "claude-4.1-opus", provider: "anthropic", status: "*", color: "text-green-400" },
-                    { id: "4", name: "o3", provider: "openai", status: "*", color: "text-green-400" },
-                    { id: "5", name: "gemini-2.5-pro", provider: "google", status: "*", color: "text-green-400" },
-                    { id: "6", name: "grok-4", provider: "xai", status: "*", color: "text-green-400" },
-                  ].map((model) => (
-                    <div
-                      key={model.id}
-                      className="flex items-center justify-between py-2 px-4 hover:bg-gray-900 cursor-pointer group transition-all duration-200 border border-transparent hover:border-gray-700"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="text-gray-500 w-6">[{model.id}]</span>
-                        <span className={`${model.color} group-hover:text-white transition-colors`}>
-                          {model.status}
-                        </span>
-                        <span className="text-white group-hover:text-gray-200 transition-colors">{model.name}</span>
-                        <span className="text-gray-500 text-xs">({model.provider})</span>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 text-xs">
-                        Нажмите {model.id} для выбора
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-800">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="text-sm text-gray-400">
-                      <div className="mb-2">Использование:</div>
-                      <div className="font-mono text-xs text-gray-500 space-y-1">
-                        <div>$ flux generate --model gpt-5 "Создать React-компонент"</div>
-                        <div>$ flux model set claude-4-sonnet # По умолчанию</div>
-                        <div>$ flux model status # Проверить модели</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-6 text-xs text-gray-500">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>4 активно</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                        <span>2 ожидают</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                        <span>Авто-синхронизация</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="text-center">
+                <p className="text-white font-bold text-lg">Заявка отправлена!</p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Она появится в Discord-канале в течение минуты.
+                </p>
               </div>
             </div>
-
-            <div className="mt-6 text-center">
-              <div className="inline-flex items-center gap-2 text-gray-400 text-sm">
-                <span className="text-green-400">*</span>
-                <span>Модели обновляются автоматически - Настройка не требуется</span>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <Icon name="User" size={13} className="text-gray-500" />
+                    Ваше Имя Фамилия
+                    <span className="text-[#e63946]">*</span>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-[#1a1c2e] border border-[#2a2d4a] rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-[#e63946] transition-colors"
+                  required
+                />
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="px-6 py-20 lg:px-12 border-t border-gray-800 bg-gray-950/30" id="docs">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="mb-12">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Начните за 30 секунд</h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Установите, инициализируйте проект и сделайте первый деплой — всё без выхода из терминала. Никаких GUI, никаких лишних кликов.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            <div className="group relative h-full">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 transform rotate-1 group-hover:rotate-2 transition-transform duration-300"></div>
-              <div className="relative bg-black border border-gray-700 p-6 h-full flex flex-col justify-between hover:border-white transition-all duration-300 group-hover:shadow-xl group-hover:shadow-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.02)_0%,transparent_50%)] bg-[length:4px_4px]">
-                <div className="text-center flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="w-12 h-12 mx-auto mb-4 bg-gray-900 border border-gray-600 flex items-center justify-center group-hover:border-white transition-colors group-hover:bg-gray-800">
-                      <span className="text-lg font-mono text-white group-hover:text-gray-100">01</span>
-                    </div>
-                    <h3 className="text-lg font-bold mb-3 text-white group-hover:text-gray-100">Инициализация</h3>
-                    <p className="text-gray-400 mb-4 group-hover:text-gray-300 text-sm leading-relaxed">
-                      Создайте AI-проект без единого ручного шага
-                    </p>
-                  </div>
-                  <div
-                    className="bg-gray-900 border border-gray-700 p-2.5 font-mono text-xs text-left group-hover:border-gray-500 transition-colors group-hover:bg-gray-800 cursor-pointer flex items-center justify-between"
-                    onClick={() => copyToClipboard("flux init", "init-cmd")}
+              {/* Department Select */}
+              {(activeTab === "join" || activeTab === "weapon") && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="MapPin" size={13} className="text-gray-500" />
+                      {activeTab === "join" ? "Выберите отдел" : "Тип вооружения"}
+                      <span className="text-[#e63946]">*</span>
+                    </span>
+                  </label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="w-full bg-[#1a1c2e] border border-[#2a2d4a] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[#e63946] transition-colors cursor-pointer"
+                    required
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500">$ </span>
-                      <span className="text-white group-hover:text-gray-100">flux init</span>
-                    </div>
-                    {copiedStates["init-cmd"] ? (
-                      <Check className="w-3 h-3 text-green-400" />
-                    ) : (
-                      <Copy className="w-3 h-3 text-gray-400 hover:text-white transition-colors" />
-                    )}
-                  </div>
+                    <option value="">
+                      {activeTab === "join" ? "Выберите отдел для вступления" : "Выберите тип вооружения"}
+                    </option>
+                    {DEPARTMENTS.map((dep) => (
+                      <option key={dep} value={dep}>{dep}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-            </div>
-
-            <div className="group relative h-full">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 transform -rotate-1 group-hover:-rotate-2 transition-transform duration-300"></div>
-              <div className="relative bg-black border border-gray-700 p-6 h-full flex flex-col justify-between hover:border-white transition-all duration-300 group-hover:shadow-xl group-hover:shadow-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.02)_0%,transparent_50%)] bg-[length:4px_4px]">
-                <div className="text-center flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="w-12 h-12 mx-auto mb-4 bg-gray-900 border border-gray-600 flex items-center justify-center group-hover:border-white transition-colors group-hover:bg-gray-800">
-                      <span className="text-lg font-mono text-white group-hover:text-gray-100">02</span>
-                    </div>
-                    <h3 className="text-lg font-bold mb-3 text-white group-hover:text-gray-100">Генерация</h3>
-                    <p className="text-gray-400 mb-4 group-hover:text-gray-300 text-sm leading-relaxed">
-                      Генерируйте код, тесты и документацию через AI
-                    </p>
-                  </div>
-                  <div
-                    className="bg-gray-900 border border-gray-700 p-2.5 font-mono text-xs text-left group-hover:border-gray-500 transition-colors group-hover:bg-gray-800 cursor-pointer flex items-center justify-between"
-                    onClick={() => copyToClipboard("flux generate", "generate-cmd")}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500">$ </span>
-                      <span className="text-white group-hover:text-gray-100">flux generate</span>
-                    </div>
-                    {copiedStates["generate-cmd"] ? (
-                      <Check className="w-3 h-3 text-green-400" />
-                    ) : (
-                      <Copy className="w-3 h-3 text-gray-400 hover:text-white transition-colors" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative h-full md:col-span-2 lg:col-span-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 transform rotate-1 group-hover:rotate-2 transition-transform duration-300"></div>
-              <div className="relative bg-black border border-gray-700 p-6 h-full flex flex-col justify-between hover:border-white transition-all duration-300 group-hover:shadow-xl group-hover:shadow-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.02)_0%,transparent_50%)] bg-[length:4px_4px]">
-                <div className="text-center flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="w-12 h-12 mx-auto mb-4 bg-gray-900 border border-gray-600 flex items-center justify-center group-hover:border-white transition-colors group-hover:bg-gray-800">
-                      <span className="text-lg font-mono text-white group-hover:text-gray-100">03</span>
-                    </div>
-                    <h3 className="text-lg font-bold mb-3 text-white group-hover:text-gray-100">Деплой</h3>
-                    <p className="text-gray-400 mb-4 group-hover:text-gray-300 text-sm leading-relaxed">
-                      Zero-downtime деплой в production одной командой
-                    </p>
-                  </div>
-                  <div
-                    className="bg-gray-900 border border-gray-700 p-2.5 font-mono text-xs text-left group-hover:border-gray-500 transition-colors group-hover:bg-gray-800 cursor-pointer flex items-center justify-between"
-                    onClick={() => copyToClipboard("flux deploy", "deploy-cmd")}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500">$ </span>
-                      <span className="text-white group-hover:text-gray-100">flux deploy</span>
-                    </div>
-                    {copiedStates["deploy-cmd"] ? (
-                      <Check className="w-3 h-3 text-green-400" />
-                    ) : (
-                      <Copy className="w-3 h-3 text-gray-400 hover:text-white transition-colors" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <Link to="/docs" className="group relative cursor-pointer inline-block w-full sm:w-auto">
-              <div className="absolute inset-0 border-2 border-gray-600 bg-gray-900/20 transition-all duration-300 group-hover:border-white group-hover:shadow-lg group-hover:shadow-white/20"></div>
-              <div className="relative border-2 border-white bg-white text-black font-bold px-8 sm:px-16 py-4 sm:py-5 text-lg sm:text-xl transition-all duration-300 group-hover:bg-gray-100 group-hover:text-black transform translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 text-center">
-                <div className="flex items-center justify-center gap-2 sm:gap-3">
-                  <span className="text-gray-600 text-base sm:text-lg">&gt;</span>
-                  <span className="text-base sm:text-lg">Начать сейчас</span>
-                </div>
-              </div>
-            </Link>
-
-            <div
-              className="text-gray-400 text-base sm:text-lg font-mono hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-2 sm:gap-3 px-4 py-2 hover:bg-gray-900/30 rounded-none border border-transparent hover:border-gray-700"
-              onClick={() => copyToClipboard("npm install -g flux-cli", "bottom-install")}
-            >
-              {copiedStates["bottom-install"] ? (
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
-              ) : (
-                <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white transition-colors flex-shrink-0" />
               )}
-              <span className="break-all sm:break-normal">$ npm install -g flux-cli</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-800 px-6 py-12 lg:px-12 bg-gray-950">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center">
-            <div className="text-gray-600 text-lg mb-4">Создано разработчиками — для разработчиков.</div>
-            <div className="text-gray-700 text-sm">FLUX CLI · Быстрее. Умнее. Прямо из терминала.</div>
-          </div>
+              {/* Rank Select */}
+              {(activeTab === "join" || activeTab === "rank") && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="Clock" size={13} className="text-gray-500" />
+                      Ваш текущий ранг
+                      <span className="text-[#e63946]">*</span>
+                    </span>
+                  </label>
+                  <select
+                    value={formData.rank}
+                    onChange={(e) => setFormData({ ...formData, rank: e.target.value })}
+                    className="w-full bg-[#1a1c2e] border border-[#2a2d4a] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[#e63946] transition-colors cursor-pointer"
+                    required
+                  >
+                    <option value="">Выберите ранг</option>
+                    {RANKS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Experience */}
+              {(activeTab === "join" || activeTab === "rank" || activeTab === "academy") && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="Briefcase" size={13} className="text-gray-500" />
+                      Опыт работы
+                      <span className="text-[#e63946]">*</span>
+                    </span>
+                  </label>
+                  <textarea
+                    value={formData.experience}
+                    onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                    rows={3}
+                    placeholder="Опишите ваш опыт работы в данном или смежных отделах..."
+                    className="w-full bg-[#1a1c2e] border border-[#2a2d4a] rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-[#e63946] transition-colors resize-none"
+                    required
+                  />
+                </div>
+              )}
+
+              {/* Motivation / Reason */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <Icon name="MessageSquare" size={13} className="text-gray-500" />
+                    {activeTab === "ic_leave" || activeTab === "ooc_leave" ? "Причина и сроки" : "Мотивация"}
+                    <span className="text-[#e63946]">*</span>
+                  </span>
+                </label>
+                <textarea
+                  value={formData.motivation}
+                  onChange={(e) => setFormData({ ...formData, motivation: e.target.value })}
+                  rows={4}
+                  placeholder={
+                    activeTab === "ic_leave" || activeTab === "ooc_leave"
+                      ? "Укажите причину и предполагаемые сроки отпуска..."
+                      : "Почему вы хотите вступить / получить повышение?"
+                  }
+                  className="w-full bg-[#1a1c2e] border border-[#2a2d4a] rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-[#e63946] transition-colors resize-none"
+                  required
+                />
+              </div>
+
+              {/* Discord Contact */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <Icon name="AtSign" size={13} className="text-gray-500" />
+                    Discord контакт
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.contacts}
+                  onChange={(e) => setFormData({ ...formData, contacts: e.target.value })}
+                  placeholder="@username"
+                  className="w-full bg-[#1a1c2e] border border-[#2a2d4a] rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-[#e63946] transition-colors"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full bg-[#e63946] hover:bg-[#c1121f] text-white font-bold py-3.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-[#e63946]/20 mt-2"
+              >
+                <Icon name="Send" size={16} />
+                Подать заявку «{activeTicketType?.label}»
+              </button>
+
+              <p className="text-center text-xs text-gray-600">
+                Заявка будет автоматически отправлена в Discord-канал FIB
+              </p>
+            </form>
+          )}
         </div>
-      </footer>
+      </main>
     </div>
   )
 }
