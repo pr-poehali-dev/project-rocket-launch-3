@@ -24,57 +24,63 @@ export default function Index() {
   }
 
   const commands = [
-    "flux init --ai-powered",
-    "flux generate --model gpt-5 --context full",
-    "flux review --agent claude-4 --interactive",
-    "flux deploy --env production --optimize",
+    "flux init --ai-powered --template react",
+    "flux generate --model claude-4 --context full",
+    "flux review --agent auto --fix",
+    "flux deploy --env production --zero-downtime",
   ]
 
   const terminalSequences = [
     {
-      command: "flux init --ai-powered",
+      command: "flux init --ai-powered --template react",
       outputs: [
-        "Инициализация проекта FLUX CLI...",
-        "Установка зависимостей...",
-        "Настройка AI-моделей...",
-        "Проект успешно создан!",
+        "✓ Инициализация FLUX CLI проекта...",
+        "✓ Установка зависимостей [47 пакетов]...",
+        "✓ Подключение AI-агентов...",
+        "✓ Готово! Проект создан за 1.2s",
       ],
     },
     {
-      command: "flux generate --model gpt-5 --context full",
+      command: "flux generate --model claude-4 --context full",
       outputs: [
-        "Загрузка модели GPT-5...",
-        "Анализ контекста проекта...",
-        "Генерация кода...",
-        "Генерация завершена!",
+        "✓ Анализ кодовой базы [312 файлов]...",
+        "✓ Модель claude-4 загружена...",
+        "✓ Генерация кода с учётом контекста...",
+        "✓ Компонент создан! +143 строки",
       ],
     },
     {
-      command: "flux review --agent claude-4 --interactive",
+      command: "flux review --agent auto --fix",
       outputs: [
-        "Запуск интерактивного ревью...",
-        "Claude-4 анализирует изменения...",
-        "Формирование рекомендаций...",
-        "Сессия ревью активна!",
+        "✓ Сканирование изменений [28 файлов]...",
+        "✓ Обнаружено 3 потенциальных проблемы...",
+        "✓ Автоматическое исправление применено...",
+        "✓ Ревью завершено. Код готов к мёржу!",
       ],
     },
     {
-      command: "flux deploy --env production --optimize",
+      command: "flux deploy --env production --zero-downtime",
       outputs: [
-        "Сборка для production...",
-        "Оптимизация бандла...",
-        "Деплой на production...",
-        "Деплой завершён!",
+        "✓ Сборка production-билда [2.1s]...",
+        "✓ Прогон тестов: 142/142 passed...",
+        "✓ Rolling deployment запущен...",
+        "✓ Деплой завершён! 0 секунд простоя.",
       ],
     },
   ]
 
-  const heroAsciiText = `███████╗██╗     ██╗   ██╗██╗  ██╗     ██████╗██╗     ██╗
-██╔════╝██║     ██║   ██║╚██╗██╔╝    ██╔════╝██║     ██║
-█████╗  ██║     ██║   ██║ ╚███╔╝     ██║     ██║     ██║
-██╔══╝  ██║     ██║   ██║ ██╔██╗     ██║     ██║     ██║
-██║     ███████╗╚██████╔╝██╔╝ ██╗    ╚██████╗███████╗██║
-╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝     ╚═════╝╚══════╝╚═╝`
+  const heroAsciiText = `███████╗██╗     ██╗   ██╗██╗  ██╗
+██╔════╝██║     ██║   ██║╚██╗██╔╝
+█████╗  ██║     ██║   ██║ ╚███╔╝ 
+██╔══╝  ██║     ██║   ██║ ██╔██╗ 
+██║     ███████╗╚██████╔╝██╔╝ ██╗
+╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+  ██████╗██╗     ██╗             
+ ██╔════╝██║     ██║             
+ ██║     ██║     ██║             
+ ██║     ██║     ██║             
+ ╚██████╗███████╗██║             
+  ╚═════╝╚══════╝╚═╝             `
 
   useEffect(() => {
     const chars = "FLUXCLI01010101ABCDEF".split("")
@@ -257,14 +263,14 @@ export default function Index() {
             </div>
 
             <h1 className="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-              Создан, чтобы помочь вам <span className="text-gray-400 animate-pulse">деплоить</span>,
+              Мощный CLI-инструмент с <span className="text-gray-400 animate-pulse">AI-интеграцией</span>,
               <br />
-              прямо из{" "}
-              <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">терминала</span>.
+              прямо в вашем{" "}
+              <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">терминале</span>.
             </h1>
 
             <p className="text-lg text-gray-300 leading-relaxed max-w-3xl mx-auto mb-8">
-              Используйте в IDE или любом терминале. Одни команды, любое окружение. Интегрируется в любой рабочий процесс. Полный контроль из терминала.
+              Один инструмент — вся мощь современных AI-моделей. Генерируйте код, проводите ревью и деплойте в production одной командой. Работает в любом IDE и окружении.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -382,9 +388,9 @@ export default function Index() {
       <section className="px-6 py-16 lg:px-12 border-t border-gray-800" id="integrations">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Поддержка всех IDE</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Работает в любом окружении</h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              FLUX CLI работает везде. Одна установка, безграничные возможности.
+              FLUX CLI интегрируется с любым IDE за 30 секунд. Одна установка — везде работает.
             </p>
           </div>
 
@@ -472,8 +478,8 @@ export default function Index() {
       <section className="px-6 py-20 lg:px-12 border-t border-gray-800" id="models">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Новейшие AI-модели</h2>
-            <p className="text-xl text-gray-400">Выбирайте AI-модель прямо из терминала</p>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Топовые AI-модели</h2>
+            <p className="text-xl text-gray-400">Переключайтесь между моделями одной командой — без лишних настроек</p>
           </div>
 
           <div className="max-w-4xl mx-auto">
@@ -568,9 +574,9 @@ export default function Index() {
       <section className="px-6 py-20 lg:px-12 border-t border-gray-800 bg-gray-950/30" id="docs">
         <div className="max-w-5xl mx-auto text-center">
           <div className="mb-12">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Готовы ускориться?</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Начните за 30 секунд</h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Пишите мощные скрипты и автоматизации. Автоматически обновляйте документацию, запускайте проверки безопасности или создавайте собственных AI-агентов.
+              Установите, инициализируйте проект и сделайте первый деплой — всё без выхода из терминала. Никаких GUI, никаких лишних кликов.
             </p>
           </div>
 
@@ -585,7 +591,7 @@ export default function Index() {
                     </div>
                     <h3 className="text-lg font-bold mb-3 text-white group-hover:text-gray-100">Инициализация</h3>
                     <p className="text-gray-400 mb-4 group-hover:text-gray-300 text-sm leading-relaxed">
-                      Создавайте AI-проекты без настройки
+                      Создайте AI-проект без единого ручного шага
                     </p>
                   </div>
                   <div
@@ -616,7 +622,7 @@ export default function Index() {
                     </div>
                     <h3 className="text-lg font-bold mb-3 text-white group-hover:text-gray-100">Генерация</h3>
                     <p className="text-gray-400 mb-4 group-hover:text-gray-300 text-sm leading-relaxed">
-                      Создавайте код с новейшими AI-моделями
+                      Генерируйте код, тесты и документацию через AI
                     </p>
                   </div>
                   <div
@@ -647,7 +653,7 @@ export default function Index() {
                     </div>
                     <h3 className="text-lg font-bold mb-3 text-white group-hover:text-gray-100">Деплой</h3>
                     <p className="text-gray-400 mb-4 group-hover:text-gray-300 text-sm leading-relaxed">
-                      Выкатывайте в production с авто-оптимизацией
+                      Zero-downtime деплой в production одной командой
                     </p>
                   </div>
                   <div
@@ -699,8 +705,8 @@ export default function Index() {
       <footer className="border-t border-gray-800 px-6 py-12 lg:px-12 bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <div className="text-gray-600 text-lg mb-4">Создано разработчиками для разработчиков.</div>
-            <div className="text-gray-700 text-sm">FLUX CLI. Деплой быстрее. Код лучше.</div>
+            <div className="text-gray-600 text-lg mb-4">Создано разработчиками — для разработчиков.</div>
+            <div className="text-gray-700 text-sm">FLUX CLI · Быстрее. Умнее. Прямо из терминала.</div>
           </div>
         </div>
       </footer>
